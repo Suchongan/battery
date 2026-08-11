@@ -1,0 +1,8 @@
+<resources>
+    <!-- Minimal manifest-level theme; actual UI theming is done by Compose's
+         MaterialTheme (see ui/theme/Theme.kt). This only controls the window
+         background shown before Compose content is drawn. -->
+    <style name="Theme.Battery" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@android:color/white</item>
+    </style>
+</resources>

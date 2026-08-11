@@ -1,0 +1,54 @@
+<resources>
+    <string name="app_name">電池監控</string>
+
+    <!-- Navigation -->
+    <string name="nav_dashboard">總覽</string>
+    <string name="nav_history">歷史紀錄</string>
+    <string name="nav_settings">設定</string>
+
+    <!-- Dashboard -->
+    <string name="dashboard_charging">充電中</string>
+    <string name="dashboard_discharging">使用中</string>
+    <string name="dashboard_full">已充滿</string>
+    <string name="dashboard_not_charging">未在充電</string>
+    <string name="dashboard_unknown_state">狀態未知</string>
+    <string name="dashboard_health">電池健康度</string>
+    <string name="dashboard_temperature">溫度</string>
+    <string name="dashboard_voltage">電壓</string>
+    <string name="dashboard_technology">電池類型</string>
+    <string name="dashboard_plug_source">電源來源</string>
+    <string name="plug_source_ac">交流電源</string>
+    <string name="plug_source_usb">USB</string>
+    <string name="plug_source_wireless">無線充電</string>
+    <string name="plug_source_dock">充電座</string>
+    <string name="plug_source_none">未連接電源</string>
+    <string name="plug_source_unknown">未知</string>
+    <string name="health_good">良好</string>
+    <string name="health_overheat">過熱</string>
+    <string name="health_dead">已損壞</string>
+    <string name="health_over_voltage">電壓過高</string>
+    <string name="health_unspecified_failure">異常</string>
+    <string name="health_cold">過冷</string>
+    <string name="health_unknown">未知</string>
+
+    <!-- History -->
+    <string name="history_range_1h">1 小時</string>
+    <string name="history_range_24h">24 小時</string>
+    <string name="history_range_7d">7 天</string>
+    <string name="history_empty">尚無歷史資料，稍後再回來查看</string>
+
+    <!-- Settings -->
+    <string name="settings_notifications_enabled">啟用通知</string>
+    <string name="settings_low_battery_threshold">低電量提醒門檻</string>
+    <string name="settings_notify_full_charge">充飽電時通知</string>
+    <string name="settings_permission_denied">通知權限被拒絕，請至系統設定開啟</string>
+    <string name="settings_oem_battery_note">部分手機廠牌（如小米、華為等）的省電管理可能會延遲背景更新，導致歷史紀錄取樣間隔變長。</string>
+
+    <!-- Notifications -->
+    <string name="notification_channel_name">電池提醒</string>
+    <string name="notification_channel_description">低電量與充飽電通知</string>
+    <string name="notification_low_battery_title">電量偏低</string>
+    <string name="notification_low_battery_text">目前電量 %1$d%%，請儘快充電</string>
+    <string name="notification_full_charge_title">已充飽電</string>
+    <string name="notification_full_charge_text">電池已充滿，可以拔掉充電器了</string>
+</resources>
