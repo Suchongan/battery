@@ -4,6 +4,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.os.BatteryManager
 
 /**
  * Dynamic-only receiver for battery events. `ACTION_BATTERY_CHANGED` has never supported
@@ -25,6 +26,7 @@ class BatteryBroadcastReceiver(
         } else {
             context.registerReceiver(null, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
         }
-        BatterySnapshotReader.fromIntent(snapshotIntent)?.let(onSnapshot)
+        val batteryManager = context.getSystemService(Context.BATTERY_SERVICE) as? BatteryManager
+        BatterySnapshotReader.fromIntent(snapshotIntent, batteryManager)?.let(onSnapshot)
     }
 }

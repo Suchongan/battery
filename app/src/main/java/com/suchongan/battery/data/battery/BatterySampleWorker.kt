@@ -3,6 +3,7 @@ package com.suchongan.battery.data.battery
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.os.BatteryManager
 import androidx.work.CoroutineWorker
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.PeriodicWorkRequestBuilder
@@ -25,7 +26,8 @@ class BatterySampleWorker(
 
     override suspend fun doWork(): Result {
         val sticky = applicationContext.registerReceiver(null, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
-        val snapshot = BatterySnapshotReader.fromIntent(sticky) ?: return Result.success()
+        val batteryManager = applicationContext.getSystemService(Context.BATTERY_SERVICE) as? BatteryManager
+        val snapshot = BatterySnapshotReader.fromIntent(sticky, batteryManager) ?: return Result.success()
 
         val repository = (applicationContext as BatteryMonitorApp).container.batteryRepository
         repository.handleWorkerSnapshot(snapshot)

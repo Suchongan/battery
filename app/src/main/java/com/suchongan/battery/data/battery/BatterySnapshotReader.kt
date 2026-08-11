@@ -10,7 +10,11 @@ import com.suchongan.battery.core.BatteryStatusMapper
  */
 object BatterySnapshotReader {
 
-    fun fromIntent(intent: Intent?, nowMillis: () -> Long = System::currentTimeMillis): BatterySnapshot? {
+    fun fromIntent(
+        intent: Intent?,
+        batteryManager: BatteryManager?,
+        nowMillis: () -> Long = System::currentTimeMillis,
+    ): BatterySnapshot? {
         if (intent == null || !intent.hasExtra(BatteryManager.EXTRA_LEVEL)) return null
 
         val level = intent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1)
@@ -31,6 +35,14 @@ object BatterySnapshotReader {
             voltageVolts = BatteryStatusMapper.voltageVolts(voltage),
             technology = technology,
             timestampMillis = nowMillis(),
+            currentMilliAmps = readCurrentMilliAmps(batteryManager),
         )
+    }
+
+    /** [BatteryManager.getIntProperty] returns Integer.MIN_VALUE when the property is unsupported. */
+    private fun readCurrentMilliAmps(batteryManager: BatteryManager?): Int? {
+        val microAmps = batteryManager?.getIntProperty(BatteryManager.BATTERY_PROPERTY_CURRENT_NOW)
+        if (microAmps == null || microAmps == Int.MIN_VALUE) return null
+        return microAmps / 1000
     }
 }

@@ -31,26 +31,42 @@ import com.suchongan.battery.core.BatteryHealth
 import com.suchongan.battery.core.ChargingState
 import com.suchongan.battery.core.PlugSource
 import com.suchongan.battery.data.battery.BatterySnapshot
+import com.suchongan.battery.data.db.BatterySample
 import com.suchongan.battery.ui.LocalAppContainer
 import com.suchongan.battery.ui.ViewModelFactory
+import com.suchongan.battery.ui.history.BatteryLineChart
 
 @Composable
 fun DashboardScreen(modifier: Modifier = Modifier) {
     val viewModel: DashboardViewModel = viewModel(factory = ViewModelFactory(LocalAppContainer.current))
     val snapshot by viewModel.snapshot.collectAsStateWithLifecycle()
-    DashboardContent(snapshot = snapshot, modifier = modifier)
+    val estimatedMinutesRemaining by viewModel.estimatedMinutesRemaining.collectAsStateWithLifecycle()
+    val recentHistory by viewModel.recentHistory.collectAsStateWithLifecycle()
+    DashboardContent(
+        snapshot = snapshot,
+        estimatedMinutesRemaining = estimatedMinutesRemaining,
+        recentHistory = recentHistory,
+        modifier = modifier,
+    )
 }
 
 @Composable
-private fun DashboardContent(snapshot: BatterySnapshot, modifier: Modifier = Modifier) {
+private fun DashboardContent(
+    snapshot: BatterySnapshot,
+    estimatedMinutesRemaining: Int?,
+    recentHistory: List<BatterySample>,
+    modifier: Modifier = Modifier,
+) {
     LazyColumn(
         modifier = modifier.fillMaxSize(),
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        item { LevelCard(snapshot) }
+        item { LevelCard(snapshot, estimatedMinutesRemaining) }
         item {
             val rows = listOf(
+                stringResource(R.string.dashboard_current) to currentLabel(snapshot.currentMilliAmps),
+                stringResource(R.string.dashboard_power) to powerLabel(snapshot.powerWatts),
                 stringResource(R.string.dashboard_health) to healthLabel(snapshot.health),
                 stringResource(R.string.dashboard_temperature) to "%.1f°C".format(snapshot.temperatureCelsius),
                 stringResource(R.string.dashboard_voltage) to "%.2fV".format(snapshot.voltageVolts),
@@ -66,11 +82,27 @@ private fun DashboardContent(snapshot: BatterySnapshot, modifier: Modifier = Mod
                 }
             }
         }
+        if (recentHistory.size >= 2) {
+            item {
+                Card(modifier = Modifier.fillMaxWidth()) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text(text = stringResource(R.string.dashboard_trend_title), style = MaterialTheme.typography.bodyMedium)
+                        Spacer(modifier = Modifier.height(8.dp))
+                        BatteryLineChart(
+                            samples = recentHistory,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(120.dp),
+                        )
+                    }
+                }
+            }
+        }
     }
 }
 
 @Composable
-private fun LevelCard(snapshot: BatterySnapshot) {
+private fun LevelCard(snapshot: BatterySnapshot, estimatedMinutesRemaining: Int?) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
@@ -101,6 +133,13 @@ private fun LevelCard(snapshot: BatterySnapshot) {
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onPrimaryContainer,
             )
+            estimatedTimeLabel(snapshot.chargingState, estimatedMinutesRemaining)?.let { label ->
+                Text(
+                    text = label,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                )
+            }
         }
     }
 }
@@ -151,3 +190,33 @@ private fun plugSourceLabel(source: PlugSource): String = stringResource(
         PlugSource.UNKNOWN -> R.string.plug_source_unknown
     },
 )
+
+@Composable
+private fun currentLabel(currentMilliAmps: Int?): String =
+    currentMilliAmps?.let { "%d mA".format(kotlin.math.abs(it)) } ?: stringResource(R.string.dashboard_value_unavailable)
+
+@Composable
+private fun powerLabel(powerWatts: Float?): String =
+    powerWatts?.let { "%.2f W".format(it) } ?: stringResource(R.string.dashboard_value_unavailable)
+
+@Composable
+private fun estimatedTimeLabel(chargingState: ChargingState, minutesRemaining: Int?): String? {
+    if (minutesRemaining == null) return null
+    val duration = formatDuration(minutesRemaining)
+    return when (chargingState) {
+        ChargingState.CHARGING -> stringResource(R.string.dashboard_estimated_charging, duration)
+        ChargingState.DISCHARGING -> stringResource(R.string.dashboard_estimated_discharging, duration)
+        else -> null
+    }
+}
+
+@Composable
+private fun formatDuration(minutes: Int): String {
+    val hours = minutes / 60
+    val remainingMinutes = minutes % 60
+    return when {
+        hours > 0 && remainingMinutes > 0 -> stringResource(R.string.dashboard_estimated_hours_minutes, hours, remainingMinutes)
+        hours > 0 -> stringResource(R.string.dashboard_estimated_hours, hours)
+        else -> stringResource(R.string.dashboard_estimated_minutes, remainingMinutes)
+    }
+}
