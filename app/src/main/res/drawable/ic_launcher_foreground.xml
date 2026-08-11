@@ -1,0 +1,13 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Simple battery-with-bolt glyph, centered within the adaptive icon safe zone. -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M45,26 L45,20 L63,20 L63,26 L69,26 C71.76,26 74,28.24 74,31 L74,82 C74,84.76 71.76,87 69,87 L39,87 C36.24,87 34,84.76 34,82 L34,31 C34,28.24 36.24,26 39,26 Z" />
+    <path
+        android:fillColor="#1B5E20"
+        android:pathData="M58,38 L44,64 L52,64 L50,78 L66,50 L57,50 Z" />
+</vector>
