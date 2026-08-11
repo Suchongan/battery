@@ -3,6 +3,7 @@ package com.suchongan.battery.data.battery
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.os.BatteryManager
 import com.suchongan.battery.core.AlertEvaluator
 import com.suchongan.battery.core.ChargingState
 import com.suchongan.battery.data.db.BatterySample
@@ -54,7 +55,8 @@ class BatteryRepository(
         context.registerReceiver(receiver, filter)
 
         val sticky = context.registerReceiver(null, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
-        BatterySnapshotReader.fromIntent(sticky)?.let { _snapshot.value = it }
+        val batteryManager = context.getSystemService(Context.BATTERY_SERVICE) as? BatteryManager
+        BatterySnapshotReader.fromIntent(sticky, batteryManager)?.let { _snapshot.value = it }
     }
 
     fun historyFlow(sinceMillis: Long): Flow<List<BatterySample>> = batterySampleDao.getSamplesSince(sinceMillis)
