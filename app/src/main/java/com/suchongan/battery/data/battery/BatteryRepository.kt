@@ -3,6 +3,7 @@ package com.suchongan.battery.data.battery
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.os.BatteryManager
 import com.suchongan.battery.core.AlertEvaluator
 import com.suchongan.battery.core.ChargingState
 import com.suchongan.battery.data.db.BatterySample
