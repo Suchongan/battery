@@ -9,6 +9,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
 
@@ -36,3 +38,18 @@ jobs:
           name: battery-monitor-debug-apk
           path: app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
+
+      # Actions artifacts (above) aren't browsable from the GitHub mobile app. Publishing the
+      # same APK to a Release gives a one-tap download link that works from the mobile app too.
+      # Only runs on pushes to main (not PRs) so forks/PRs can't publish releases.
+      - name: Publish debug APK to the "debug-latest" release
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: debug-latest
+          name: "電池監控 — 最新 Debug 版本"
+          body: |
+            自動從 main 分支編譯的最新 debug APK，可直接下載安裝測試用（非正式簽署版本）。
+            Commit: ${{ github.sha }}
+          prerelease: true
+          files: app/build/outputs/apk/debug/*.apk
