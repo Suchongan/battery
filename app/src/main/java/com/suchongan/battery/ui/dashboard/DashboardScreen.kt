@@ -63,13 +63,11 @@ private fun DashboardContent(
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         item { LevelCard(snapshot, estimatedMinutesRemaining) }
+        item { GaugesCard(snapshot) }
         item {
             val rows = listOf(
-                stringResource(R.string.dashboard_current) to currentLabel(snapshot.currentMilliAmps),
-                stringResource(R.string.dashboard_power) to powerLabel(snapshot.powerWatts),
                 stringResource(R.string.dashboard_health) to healthLabel(snapshot.health),
                 stringResource(R.string.dashboard_temperature) to "%.1f°C".format(snapshot.temperatureCelsius),
-                stringResource(R.string.dashboard_voltage) to "%.2fV".format(snapshot.voltageVolts),
                 stringResource(R.string.dashboard_technology) to snapshot.technology.ifBlank { "-" },
                 stringResource(R.string.dashboard_plug_source) to plugSourceLabel(snapshot.plugSource),
             )
@@ -144,6 +142,41 @@ private fun LevelCard(snapshot: BatterySnapshot, estimatedMinutesRemaining: Int?
     }
 }
 
+private val VOLTAGE_GAUGE_RANGE = 3.0f..4.4f
+private val CURRENT_GAUGE_RANGE = 0f..3000f
+private val POWER_GAUGE_RANGE = 0f..20f
+
+@Composable
+private fun GaugesCard(snapshot: BatterySnapshot) {
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 16.dp),
+            horizontalArrangement = Arrangement.SpaceEvenly,
+        ) {
+            DialGauge(
+                value = snapshot.voltageVolts,
+                valueRange = VOLTAGE_GAUGE_RANGE,
+                label = stringResource(R.string.dashboard_voltage),
+                formatValue = { "%.2fV".format(it) },
+            )
+            DialGauge(
+                value = snapshot.currentMilliAmps?.let { kotlin.math.abs(it).toFloat() },
+                valueRange = CURRENT_GAUGE_RANGE,
+                label = stringResource(R.string.dashboard_current),
+                formatValue = { "%.0f mA".format(it) },
+            )
+            DialGauge(
+                value = snapshot.powerWatts,
+                valueRange = POWER_GAUGE_RANGE,
+                label = stringResource(R.string.dashboard_power),
+                formatValue = { "%.2f W".format(it) },
+            )
+        }
+    }
+}
+
 @Composable
 private fun StatRow(label: String, value: String) {
     Row(
@@ -190,14 +223,6 @@ private fun plugSourceLabel(source: PlugSource): String = stringResource(
         PlugSource.UNKNOWN -> R.string.plug_source_unknown
     },
 )
-
-@Composable
-private fun currentLabel(currentMilliAmps: Int?): String =
-    currentMilliAmps?.let { "%d mA".format(kotlin.math.abs(it)) } ?: stringResource(R.string.dashboard_value_unavailable)
-
-@Composable
-private fun powerLabel(powerWatts: Float?): String =
-    powerWatts?.let { "%.2f W".format(it) } ?: stringResource(R.string.dashboard_value_unavailable)
 
 @Composable
 private fun estimatedTimeLabel(chargingState: ChargingState, minutesRemaining: Int?): String? {

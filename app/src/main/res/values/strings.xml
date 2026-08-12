@@ -32,7 +32,7 @@
     <string name="health_unknown">未知</string>
     <string name="dashboard_current">電流</string>
     <string name="dashboard_power">功率</string>
-    <string name="dashboard_value_unavailable">此裝置不支援</string>
+    <string name="dashboard_value_unavailable">不支援</string>
     <string name="dashboard_estimated_charging">預估 %1$s 後充飽</string>
     <string name="dashboard_estimated_discharging">預估還可使用 %1$s</string>
     <string name="dashboard_estimated_hours_minutes">%1$d 小時 %2$d 分鐘</string>
