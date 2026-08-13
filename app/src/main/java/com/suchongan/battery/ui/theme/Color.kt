@@ -14,3 +14,15 @@ val GreenSecondaryDark = Color(0xFFB9CCB4)
 
 val WarningRed = Color(0xFFB3261E)
 val FullChargeGreen = Color(0xFF2E7D32)
+
+// Wired charging (AC/USB/dock) — blue tone
+val WiredChargingContainerLight = Color(0xFFD6E3FF)
+val OnWiredChargingContainerLight = Color(0xFF001B3E)
+val WiredChargingContainerDark = Color(0xFF13315C)
+val OnWiredChargingContainerDark = Color(0xFFD6E3FF)
+
+// Wireless charging — purple tone
+val WirelessChargingContainerLight = Color(0xFFEEDBFF)
+val OnWirelessChargingContainerLight = Color(0xFF2A0052)
+val WirelessChargingContainerDark = Color(0xFF4A2170)
+val OnWirelessChargingContainerDark = Color(0xFFEEDBFF)

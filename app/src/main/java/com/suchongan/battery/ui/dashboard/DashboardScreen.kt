@@ -1,5 +1,8 @@
 package com.suchongan.battery.ui.dashboard
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -22,6 +25,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -35,6 +39,14 @@ import com.suchongan.battery.data.db.BatterySample
 import com.suchongan.battery.ui.LocalAppContainer
 import com.suchongan.battery.ui.ViewModelFactory
 import com.suchongan.battery.ui.history.BatteryLineChart
+import com.suchongan.battery.ui.theme.OnWiredChargingContainerDark
+import com.suchongan.battery.ui.theme.OnWiredChargingContainerLight
+import com.suchongan.battery.ui.theme.OnWirelessChargingContainerDark
+import com.suchongan.battery.ui.theme.OnWirelessChargingContainerLight
+import com.suchongan.battery.ui.theme.WiredChargingContainerDark
+import com.suchongan.battery.ui.theme.WiredChargingContainerLight
+import com.suchongan.battery.ui.theme.WirelessChargingContainerDark
+import com.suchongan.battery.ui.theme.WirelessChargingContainerLight
 
 @Composable
 fun DashboardScreen(modifier: Modifier = Modifier) {
@@ -101,9 +113,26 @@ private fun DashboardContent(
 
 @Composable
 private fun LevelCard(snapshot: BatterySnapshot, estimatedMinutesRemaining: Int?) {
+    val isDark = isSystemInDarkTheme()
+    val isCharging = snapshot.chargingState == ChargingState.CHARGING || snapshot.chargingState == ChargingState.FULL
+    val defaultContainer = MaterialTheme.colorScheme.primaryContainer
+    val defaultOnContainer = MaterialTheme.colorScheme.onPrimaryContainer
+    val (targetContainer, targetOnContainer) = when {
+        !isCharging -> defaultContainer to defaultOnContainer
+        snapshot.plugSource == PlugSource.WIRELESS ->
+            if (isDark) WirelessChargingContainerDark to OnWirelessChargingContainerDark
+            else WirelessChargingContainerLight to OnWirelessChargingContainerLight
+        snapshot.plugSource == PlugSource.AC || snapshot.plugSource == PlugSource.USB || snapshot.plugSource == PlugSource.DOCK ->
+            if (isDark) WiredChargingContainerDark to OnWiredChargingContainerDark
+            else WiredChargingContainerLight to OnWiredChargingContainerLight
+        else -> defaultContainer to defaultOnContainer
+    }
+    val containerColor by animateContainerColor(targetContainer)
+    val onContainerColor by animateContainerColor(targetOnContainer)
+
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
+        colors = CardDefaults.cardColors(containerColor = containerColor),
     ) {
         Column(
             modifier = Modifier
@@ -112,30 +141,26 @@ private fun LevelCard(snapshot: BatterySnapshot, estimatedMinutesRemaining: Int?
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Icon(
-                imageVector = if (snapshot.chargingState == ChargingState.CHARGING || snapshot.chargingState == ChargingState.FULL) {
-                    Icons.Filled.BatteryChargingFull
-                } else {
-                    Icons.Filled.BatteryStd
-                },
+                imageVector = if (isCharging) Icons.Filled.BatteryChargingFull else Icons.Filled.BatteryStd,
                 contentDescription = null,
                 modifier = Modifier.height(48.dp),
-                tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                tint = onContainerColor,
             )
             Text(
                 text = "${snapshot.levelPercent}%",
                 style = MaterialTheme.typography.headlineLarge,
-                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                color = onContainerColor,
             )
             Text(
                 text = chargingStateLabel(snapshot.chargingState),
                 style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                color = onContainerColor,
             )
             estimatedTimeLabel(snapshot.chargingState, estimatedMinutesRemaining)?.let { label ->
                 Text(
                     text = label,
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                    color = onContainerColor,
                 )
             }
         }
@@ -145,6 +170,48 @@ private fun LevelCard(snapshot: BatterySnapshot, estimatedMinutesRemaining: Int?
 private val VOLTAGE_GAUGE_RANGE = 3.0f..4.4f
 private val CURRENT_GAUGE_RANGE = 0f..3000f
 private val POWER_GAUGE_RANGE = 0f..20f
+
+@Composable
+private fun GaugesCard(snapshot: BatterySnapshot) {
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 16.dp),
+            horizontalArrangement = Arrangement.SpaceEvenly,
+        ) {
+            DialGauge(
+                value = snapshot.voltageVolts,
+                valueRange = VOLTAGE_GAUGE_RANGE,
+                label = stringResource(R.string.dashboard_voltage),
+                formatValue = { "%.2fV".format(it) },
+            )
+            DialGauge(
+                value = snapshot.currentMilliAmps?.let { kotlin.math.abs(it).toFloat() },
+                valueRange = CURRENT_GAUGE_RANGE,
+                label = stringResource(R.string.dashboard_current),
+                formatValue = { "%.0f mA".format(it) },
+            )
+            DialGauge(
+                value = snapshot.powerWatts,
+                valueRange = POWER_GAUGE_RANGE,
+                label = stringResource(R.string.dashboard_power),
+                formatValue = { "%.2f W".format(it) },
+            )
+        }
+    }
+}
+
+@Composable
+private fun animateContainerColor(target: Color) = animateColorAsState(
+    targetValue = target,
+    animationSpec = tween(durationMillis = 600),
+    label = "levelCardColor",
+)
+
+private val VOLTAGE_GAUGE_RANGE = 3.0f..4.4f
+private val CURRENT_GAUGE_RANGE = 0f..3000f
+private val POWER_GAUGE_RANGE = 0f..80f
 
 @Composable
 private fun GaugesCard(snapshot: BatterySnapshot) {
