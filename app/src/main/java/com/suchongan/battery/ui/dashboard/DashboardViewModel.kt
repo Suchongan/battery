@@ -15,7 +15,7 @@ import kotlinx.coroutines.flow.stateIn
 private const val ESTIMATE_WINDOW_MS = 30 * 60 * 1000L
 
 /** Window shown in the Dashboard's inline trend chart. */
-private const val CHART_WINDOW_MS = 24 * 60 * 60 * 1000L
+private const val CHART_WINDOW_MS = 6 * 60 * 60 * 1000L
 
 class DashboardViewModel(repository: BatteryRepository) : ViewModel() {
 

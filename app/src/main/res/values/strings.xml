@@ -38,7 +38,11 @@
     <string name="dashboard_estimated_hours_minutes">%1$d 小時 %2$d 分鐘</string>
     <string name="dashboard_estimated_hours">%1$d 小時</string>
     <string name="dashboard_estimated_minutes">%1$d 分鐘</string>
-    <string name="dashboard_trend_title">電量趨勢（24 小時）</string>
+    <string name="dashboard_trend_title">電量趨勢</string>
+    <string name="chart_x_axis_now">現在</string>
+    <string name="chart_x_axis_minutes_ago">%1$d分鐘前</string>
+    <string name="chart_x_axis_hours_ago">%1$d小時前</string>
+    <string name="chart_x_axis_days_ago">%1$d天前</string>
 
     <!-- History -->
     <string name="history_range_1h">1 小時</string>
