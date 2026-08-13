@@ -47,6 +47,11 @@ fun HistoryScreen(modifier: Modifier = Modifier) {
                     .fillMaxWidth()
                     .weight(1f),
             )
+            Spacer(modifier = Modifier.height(6.dp))
+            ChartXAxisLabels(
+                labels = relativeChartXAxisLabels(selectedRange.axisTotalUnits, selectedRange.axisUnit),
+                modifier = Modifier.fillMaxWidth(),
+            )
         }
     }
 }

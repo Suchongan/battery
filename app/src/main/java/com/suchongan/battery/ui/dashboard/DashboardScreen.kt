@@ -39,6 +39,9 @@ import com.suchongan.battery.data.db.BatterySample
 import com.suchongan.battery.ui.LocalAppContainer
 import com.suchongan.battery.ui.ViewModelFactory
 import com.suchongan.battery.ui.history.BatteryLineChart
+import com.suchongan.battery.ui.history.ChartTimeUnit
+import com.suchongan.battery.ui.history.ChartXAxisLabels
+import com.suchongan.battery.ui.history.relativeChartXAxisLabels
 import com.suchongan.battery.ui.theme.OnWiredChargingContainerDark
 import com.suchongan.battery.ui.theme.OnWiredChargingContainerLight
 import com.suchongan.battery.ui.theme.OnWirelessChargingContainerDark
@@ -104,6 +107,11 @@ private fun DashboardContent(
                                 .fillMaxWidth()
                                 .height(120.dp),
                         )
+                        Spacer(modifier = Modifier.height(6.dp))
+                        ChartXAxisLabels(
+                            labels = relativeChartXAxisLabels(totalUnits = 6, unit = ChartTimeUnit.HOURS),
+                            modifier = Modifier.fillMaxWidth(),
+                        )
                     }
                 }
             }
@@ -167,41 +175,6 @@ private fun LevelCard(snapshot: BatterySnapshot, estimatedMinutesRemaining: Int?
     }
 }
 
-private val VOLTAGE_GAUGE_RANGE = 3.0f..4.4f
-private val CURRENT_GAUGE_RANGE = 0f..3000f
-private val POWER_GAUGE_RANGE = 0f..20f
-
-@Composable
-private fun GaugesCard(snapshot: BatterySnapshot) {
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 16.dp),
-            horizontalArrangement = Arrangement.SpaceEvenly,
-        ) {
-            DialGauge(
-                value = snapshot.voltageVolts,
-                valueRange = VOLTAGE_GAUGE_RANGE,
-                label = stringResource(R.string.dashboard_voltage),
-                formatValue = { "%.2fV".format(it) },
-            )
-            DialGauge(
-                value = snapshot.currentMilliAmps?.let { kotlin.math.abs(it).toFloat() },
-                valueRange = CURRENT_GAUGE_RANGE,
-                label = stringResource(R.string.dashboard_current),
-                formatValue = { "%.0f mA".format(it) },
-            )
-            DialGauge(
-                value = snapshot.powerWatts,
-                valueRange = POWER_GAUGE_RANGE,
-                label = stringResource(R.string.dashboard_power),
-                formatValue = { "%.2f W".format(it) },
-            )
-        }
-    }
-}
-
 @Composable
 private fun animateContainerColor(target: Color) = animateColorAsState(
     targetValue = target,
@@ -215,6 +188,7 @@ private val POWER_GAUGE_RANGE = 0f..80f
 
 @Composable
 private fun GaugesCard(snapshot: BatterySnapshot) {
+    val isCharging = snapshot.chargingState == ChargingState.CHARGING || snapshot.chargingState == ChargingState.FULL
     Card(modifier = Modifier.fillMaxWidth()) {
         Row(
             modifier = Modifier
@@ -223,26 +197,29 @@ private fun GaugesCard(snapshot: BatterySnapshot) {
             horizontalArrangement = Arrangement.SpaceEvenly,
         ) {
             DialGauge(
-                value = snapshot.voltageVolts,
+                value = chargingOrZero(isCharging, snapshot.voltageVolts),
                 valueRange = VOLTAGE_GAUGE_RANGE,
                 label = stringResource(R.string.dashboard_voltage),
                 formatValue = { "%.2fV".format(it) },
             )
             DialGauge(
-                value = snapshot.currentMilliAmps?.let { kotlin.math.abs(it).toFloat() },
+                value = chargingOrZero(isCharging, snapshot.currentMilliAmps?.let { kotlin.math.abs(it).toFloat() }),
                 valueRange = CURRENT_GAUGE_RANGE,
                 label = stringResource(R.string.dashboard_current),
-                formatValue = { "%.0f mA".format(it) },
+                formatValue = { "%.0fmA".format(it) },
             )
             DialGauge(
-                value = snapshot.powerWatts,
+                value = chargingOrZero(isCharging, snapshot.powerWatts),
                 valueRange = POWER_GAUGE_RANGE,
                 label = stringResource(R.string.dashboard_power),
-                formatValue = { "%.2f W".format(it) },
+                formatValue = { "%.2fW".format(it) },
             )
         }
     }
 }
+
+/** While not charging/full, the gauges show a resting 0 instead of a stale live reading. */
+private fun chargingOrZero(isCharging: Boolean, value: Float?): Float? = if (isCharging) value else 0f
 
 @Composable
 private fun StatRow(label: String, value: String) {

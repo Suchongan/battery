@@ -26,3 +26,9 @@ val WirelessChargingContainerLight = Color(0xFFEEDBFF)
 val OnWirelessChargingContainerLight = Color(0xFF2A0052)
 val WirelessChargingContainerDark = Color(0xFF4A2170)
 val OnWirelessChargingContainerDark = Color(0xFFEEDBFF)
+
+// Trend chart axis text / gridlines
+val ChartAxisTextLight = Color(0xFF5B6155)
+val ChartAxisTextDark = Color(0xFFB7C0AA)
+val ChartGridLineLight = Color(0xFFC9CEBF)
+val ChartGridLineDark = Color(0xFF454C3D)
