@@ -175,41 +175,6 @@ private fun LevelCard(snapshot: BatterySnapshot, estimatedMinutesRemaining: Int?
     }
 }
 
-private val VOLTAGE_GAUGE_RANGE = 3.0f..4.4f
-private val CURRENT_GAUGE_RANGE = 0f..3000f
-private val POWER_GAUGE_RANGE = 0f..20f
-
-@Composable
-private fun GaugesCard(snapshot: BatterySnapshot) {
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 16.dp),
-            horizontalArrangement = Arrangement.SpaceEvenly,
-        ) {
-            DialGauge(
-                value = snapshot.voltageVolts,
-                valueRange = VOLTAGE_GAUGE_RANGE,
-                label = stringResource(R.string.dashboard_voltage),
-                formatValue = { "%.2fV".format(it) },
-            )
-            DialGauge(
-                value = snapshot.currentMilliAmps?.let { kotlin.math.abs(it).toFloat() },
-                valueRange = CURRENT_GAUGE_RANGE,
-                label = stringResource(R.string.dashboard_current),
-                formatValue = { "%.0f mA".format(it) },
-            )
-            DialGauge(
-                value = snapshot.powerWatts,
-                valueRange = POWER_GAUGE_RANGE,
-                label = stringResource(R.string.dashboard_power),
-                formatValue = { "%.2f W".format(it) },
-            )
-        }
-    }
-}
-
 @Composable
 private fun animateContainerColor(target: Color) = animateColorAsState(
     targetValue = target,
