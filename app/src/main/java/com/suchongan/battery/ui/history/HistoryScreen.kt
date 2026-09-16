@@ -9,17 +9,24 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Card
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.suchongan.battery.R
+import com.suchongan.battery.data.db.BatterySample
 import com.suchongan.battery.ui.LocalAppContainer
 import com.suchongan.battery.ui.ViewModelFactory
 
@@ -41,6 +48,8 @@ fun HistoryScreen(modifier: Modifier = Modifier) {
                 Text(text = stringResource(R.string.history_empty))
             }
         } else {
+            AverageLevelSummary(samples = samples)
+            Spacer(modifier = Modifier.height(16.dp))
             BatteryLineChart(
                 samples = samples,
                 modifier = Modifier
@@ -52,6 +61,50 @@ fun HistoryScreen(modifier: Modifier = Modifier) {
                 labels = relativeChartXAxisLabels(selectedRange.axisTotalUnits, selectedRange.axisUnit),
                 modifier = Modifier.fillMaxWidth(),
             )
+        }
+    }
+}
+
+/** Average/min/max battery level (%) across the currently selected [samples] window. */
+@Composable
+private fun AverageLevelSummary(samples: List<BatterySample>) {
+    val average = samples.map { it.level }.average().let { Math.round(it).toInt() }
+    val min = samples.minOf { it.level }
+    val max = samples.maxOf { it.level }
+
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Text(text = stringResource(R.string.history_average_level), style = MaterialTheme.typography.bodyMedium)
+                Text(text = "$average%", style = MaterialTheme.typography.titleMedium)
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            LinearProgressIndicator(
+                progress = { average / 100f },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(10.dp)
+                    .clip(RoundedCornerShape(5.dp)),
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Text(
+                    text = stringResource(R.string.history_min_level, min),
+                    fontSize = 11.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Text(
+                    text = stringResource(R.string.history_max_level, max),
+                    fontSize = 11.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
         }
     }
 }

@@ -1,9 +1,12 @@
 package com.suchongan.battery.ui.dashboard
 
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -12,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BatteryChargingFull
@@ -25,13 +29,19 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.suchongan.battery.R
 import com.suchongan.battery.core.BatteryHealth
+import com.suchongan.battery.core.ChargingProtocol
+import com.suchongan.battery.core.ChargingProtocolClassifier
 import com.suchongan.battery.core.ChargingState
 import com.suchongan.battery.core.PlugSource
 import com.suchongan.battery.data.battery.BatterySnapshot
@@ -79,12 +89,14 @@ private fun DashboardContent(
     ) {
         item { LevelCard(snapshot, estimatedMinutesRemaining) }
         item { GaugesCard(snapshot) }
+        item { KpiRow(snapshot, estimatedMinutesRemaining) }
         item {
             val rows = listOf(
                 stringResource(R.string.dashboard_health) to healthLabel(snapshot.health),
                 stringResource(R.string.dashboard_temperature) to "%.1f°C".format(snapshot.temperatureCelsius),
                 stringResource(R.string.dashboard_technology) to snapshot.technology.ifBlank { "-" },
                 stringResource(R.string.dashboard_plug_source) to plugSourceLabel(snapshot.plugSource),
+                stringResource(R.string.dashboard_charging_protocol) to chargingProtocolLabel(snapshot),
             )
             Card(modifier = Modifier.fillMaxWidth()) {
                 Column(modifier = Modifier.padding(16.dp)) {
@@ -148,17 +160,24 @@ private fun LevelCard(snapshot: BatterySnapshot, estimatedMinutesRemaining: Int?
                 .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Icon(
-                imageVector = if (isCharging) Icons.Filled.BatteryChargingFull else Icons.Filled.BatteryStd,
-                contentDescription = null,
-                modifier = Modifier.height(48.dp),
-                tint = onContainerColor,
-            )
-            Text(
-                text = "${snapshot.levelPercent}%",
-                style = MaterialTheme.typography.headlineLarge,
-                color = onContainerColor,
-            )
+            LevelRing(
+                percent = snapshot.levelPercent,
+                activeColor = onContainerColor,
+                trackColor = onContainerColor.copy(alpha = 0.25f),
+            ) {
+                Icon(
+                    imageVector = if (isCharging) Icons.Filled.BatteryChargingFull else Icons.Filled.BatteryStd,
+                    contentDescription = null,
+                    modifier = Modifier.height(40.dp),
+                    tint = onContainerColor,
+                )
+                Text(
+                    text = "${snapshot.levelPercent}%",
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = onContainerColor,
+                )
+            }
+            Spacer(modifier = Modifier.height(8.dp))
             Text(
                 text = chargingStateLabel(snapshot.chargingState),
                 style = MaterialTheme.typography.bodyLarge,
@@ -181,6 +200,56 @@ private fun animateContainerColor(target: Color) = animateColorAsState(
     animationSpec = tween(durationMillis = 600),
     label = "levelCardColor",
 )
+
+private val LEVEL_RING_SIZE = 132.dp
+private val LEVEL_RING_STROKE_WIDTH = 10.dp
+
+/** Circular progress ring showing [percent], with [content] (icon + percent text) centered inside. */
+@Composable
+private fun LevelRing(
+    percent: Int,
+    activeColor: Color,
+    trackColor: Color,
+    content: @Composable () -> Unit,
+) {
+    val animatedFraction by animateFloatAsState(
+        targetValue = (percent / 100f).coerceIn(0f, 1f),
+        animationSpec = tween(durationMillis = 600),
+        label = "levelRing",
+    )
+    Box(
+        modifier = Modifier.size(LEVEL_RING_SIZE),
+        contentAlignment = Alignment.Center,
+    ) {
+        Canvas(modifier = Modifier.size(LEVEL_RING_SIZE)) {
+            val strokeWidth = LEVEL_RING_STROKE_WIDTH.toPx()
+            val diameter = size.minDimension - strokeWidth
+            val topLeft = Offset((size.width - diameter) / 2f, (size.height - diameter) / 2f)
+            val arcSize = Size(diameter, diameter)
+            drawArc(
+                color = trackColor,
+                startAngle = -90f,
+                sweepAngle = 360f,
+                useCenter = false,
+                topLeft = topLeft,
+                size = arcSize,
+                style = Stroke(width = strokeWidth, cap = StrokeCap.Round),
+            )
+            if (animatedFraction > 0f) {
+                drawArc(
+                    color = activeColor,
+                    startAngle = -90f,
+                    sweepAngle = 360f * animatedFraction,
+                    useCenter = false,
+                    topLeft = topLeft,
+                    size = arcSize,
+                    style = Stroke(width = strokeWidth, cap = StrokeCap.Round),
+                )
+            }
+        }
+        Column(horizontalAlignment = Alignment.CenterHorizontally, content = { content() })
+    }
+}
 
 private val VOLTAGE_GAUGE_RANGE = 3.0f..4.4f
 private val CURRENT_GAUGE_RANGE = 0f..3000f
@@ -220,6 +289,62 @@ private fun GaugesCard(snapshot: BatterySnapshot) {
 
 /** While not charging/full, the gauges show a resting 0 instead of a stale live reading. */
 private fun chargingOrZero(isCharging: Boolean, value: Float?): Float? = if (isCharging) value else 0f
+
+@Composable
+private fun KpiRow(snapshot: BatterySnapshot, estimatedMinutesRemaining: Int?) {
+    val etaValue = estimatedMinutesRemaining?.let { formatDuration(it) } ?: stringResource(R.string.dashboard_kpi_placeholder)
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        KpiTile(
+            label = stringResource(R.string.dashboard_temperature),
+            value = "%.1f°C".format(snapshot.temperatureCelsius),
+            containerColor = MaterialTheme.colorScheme.secondaryContainer,
+            contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+            modifier = Modifier.weight(1f),
+        )
+        KpiTile(
+            label = stringResource(R.string.dashboard_health),
+            value = healthLabel(snapshot.health),
+            containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+            contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
+            modifier = Modifier.weight(1f),
+        )
+        KpiTile(
+            label = stringResource(R.string.dashboard_kpi_eta),
+            value = etaValue,
+            containerColor = MaterialTheme.colorScheme.primaryContainer,
+            contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+            modifier = Modifier.weight(1f),
+        )
+    }
+}
+
+@Composable
+private fun KpiTile(
+    label: String,
+    value: String,
+    containerColor: Color,
+    contentColor: Color,
+    modifier: Modifier = Modifier,
+) {
+    Card(
+        modifier = modifier,
+        colors = CardDefaults.cardColors(containerColor = containerColor),
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 16.dp, horizontal = 8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Text(text = value, style = MaterialTheme.typography.titleMedium, color = contentColor)
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(text = label, style = MaterialTheme.typography.labelMedium, color = contentColor)
+        }
+    }
+}
 
 @Composable
 private fun StatRow(label: String, value: String) {
@@ -267,6 +392,36 @@ private fun plugSourceLabel(source: PlugSource): String = stringResource(
         PlugSource.UNKNOWN -> R.string.plug_source_unknown
     },
 )
+
+/**
+ * Android doesn't expose the negotiated charging protocol (USB PD, Quick Charge, etc.) without
+ * root, so [ChargingProtocolClassifier] estimates a speed tier from delivered power and this
+ * combines it with [PlugSource] for a human-readable label, e.g. "快速充電 · 12.3W".
+ */
+@Composable
+private fun chargingProtocolLabel(snapshot: BatterySnapshot): String {
+    val isCharging = snapshot.chargingState == ChargingState.CHARGING || snapshot.chargingState == ChargingState.FULL
+    val protocol = ChargingProtocolClassifier.classify(isCharging, snapshot.powerWatts)
+    val isWireless = snapshot.plugSource == PlugSource.WIRELESS
+    val baseLabel = stringResource(
+        when (protocol) {
+            ChargingProtocol.NONE -> R.string.charging_protocol_none
+            ChargingProtocol.UNKNOWN -> R.string.charging_protocol_unknown
+            ChargingProtocol.STANDARD ->
+                if (isWireless) R.string.charging_protocol_standard_wireless else R.string.charging_protocol_standard_wired
+            ChargingProtocol.FAST ->
+                if (isWireless) R.string.charging_protocol_fast_wireless else R.string.charging_protocol_fast_wired
+            ChargingProtocol.SUPER_FAST ->
+                if (isWireless) R.string.charging_protocol_super_fast_wireless else R.string.charging_protocol_super_fast_wired
+        },
+    )
+    val powerWatts = snapshot.powerWatts
+    return if (protocol != ChargingProtocol.NONE && protocol != ChargingProtocol.UNKNOWN && powerWatts != null) {
+        "$baseLabel · %.1fW".format(powerWatts)
+    } else {
+        baseLabel
+    }
+}
 
 @Composable
 private fun estimatedTimeLabel(chargingState: ChargingState, minutesRemaining: Int?): String? {

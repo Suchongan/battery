@@ -43,12 +43,26 @@
     <string name="chart_x_axis_minutes_ago">%1$d分鐘前</string>
     <string name="chart_x_axis_hours_ago">%1$d小時前</string>
     <string name="chart_x_axis_days_ago">%1$d天前</string>
+    <string name="dashboard_kpi_eta">剩餘時間</string>
+    <string name="dashboard_kpi_placeholder">-</string>
+    <string name="dashboard_charging_protocol">充電協定</string>
+    <string name="charging_protocol_none">未充電</string>
+    <string name="charging_protocol_unknown">充電中</string>
+    <string name="charging_protocol_standard_wired">標準充電</string>
+    <string name="charging_protocol_standard_wireless">標準無線充電</string>
+    <string name="charging_protocol_fast_wired">快速充電</string>
+    <string name="charging_protocol_fast_wireless">無線快充</string>
+    <string name="charging_protocol_super_fast_wired">超級快充</string>
+    <string name="charging_protocol_super_fast_wireless">無線超級快充</string>
 
     <!-- History -->
     <string name="history_range_1h">1 小時</string>
     <string name="history_range_24h">24 小時</string>
     <string name="history_range_7d">7 天</string>
     <string name="history_empty">尚無歷史資料，稍後再回來查看</string>
+    <string name="history_average_level">平均電量</string>
+    <string name="history_min_level">最低 %1$d%%</string>
+    <string name="history_max_level">最高 %1$d%%</string>
 
     <!-- Settings -->
     <string name="settings_notifications_enabled">啟用通知</string>
